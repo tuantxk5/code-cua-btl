@@ -1,0 +1,292 @@
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <cstdlib>
+
+using namespace std;
+
+struct phieuthu {
+    int mapt;
+    string thoigian, hotennguoinop;
+    float tongtien, sotiengiam, sotiendadong;
+};
+
+struct NodePT {
+    phieuthu info;
+    NodePT* next;
+    NodePT* prev;
+};
+
+struct LISTPT {
+    NodePT* Head;
+    NodePT* Tail;
+};
+
+void khoitaoPT(LISTPT &PT) {
+    PT.Head = NULL;
+    PT.Tail = NULL;
+}
+
+NodePT* GetNode(phieuthu x) {
+    NodePT* p = new NodePT;
+    if (p == NULL) {
+        cout << "Không du bo nho";
+        exit(1);
+    }
+    p->info = x;
+    p->next = NULL;
+    p->prev = NULL;
+    return p;
+}
+
+void chencuoipt(LISTPT &PT, NodePT* p) {
+    if (PT.Head == NULL) {
+        PT.Head = p;
+        PT.Tail = PT.Head;
+    } else {
+        PT.Tail->next = p;
+        p->prev = PT.Tail;
+        PT.Tail = p;
+    }
+}
+
+void nhappt(phieuthu &x) {
+    cout << "Ma phieu thu: ";
+    cin >> x.mapt;
+    cout << "Ho ten nguoi nop: ";
+    cin.ignore();
+    getline(cin, x.hotennguoinop);
+    cout << "Thoi gian lap: ";
+    getline(cin, x.thoigian);
+    cout << "Nhap tong tien: ";
+    cin >> x.tongtien;
+    cout << "Tien giam tru: ";
+    cin >> x.sotiengiam;
+    x.sotiendadong = x.tongtien - x.sotiengiam;
+}
+
+void nhapdspt(LISTPT &PT) {
+    int n;
+    phieuthu x;
+    NodePT* p;
+    cout << "Nhap so phieu thu: ";
+    cin >> n;
+    for (int i = 1; i <= n; i++) {
+        nhappt(x);
+        p = GetNode(x);
+        chencuoipt(PT, p);
+    }
+}
+
+void xuatpt(phieuthu x) {
+    cout << setw(5) << x.mapt;
+    cout << setw(15) << x.hotennguoinop;
+    cout << setw(5) << x.thoigian;
+    cout << setw(50) << x.tongtien;
+    cout << setw(17) << x.sotiengiam;
+    cout << setw(17) << x.sotiendadong << endl;
+}
+
+void xuatdspt(LISTPT &PT) {
+    NodePT* p;
+    cout << "Danh sach phieu thu hien co:\n";
+    cout << setw(8) << "Ma PT";
+    cout << setw(20) << "Ho ten nguoi nop";
+    cout << setw(20) << "Thoi gian";
+    cout << setw(20) << "Tong tien";
+    cout << setw(15) << "So tien giam";
+    cout << setw(15) << "So tien da dong\n";
+    for (NodePT* p = PT.Head; p != NULL; p = p->next)
+        xuatpt(p->info);
+}
+
+NodePT* timmapt(LISTPT &PT, int mpt) {
+    NodePT* p;
+    for (p = PT.Head; p != NULL; p = p->next)
+        if (p->info.mapt == mpt)
+            break;
+    return p;
+}
+
+void sapxept(LISTPT &PT) {
+    NodePT* p;
+    NodePT* q;
+    phieuthu tg;
+    cout << "Sap xep theo so tien da dong\n";
+    for (p = PT.Head; p != NULL; p = p->next)
+        for (q = p->next; q != NULL; q = q->next)
+            if (p->info.sotiendadong < q->info.sotiendadong) {
+                tg = p->info;
+                p->info = q->info;
+                q->info = tg;
+            }
+    xuatdspt(PT);
+}
+
+void luu(LISTPT PT) {
+    FILE* f;
+    char filename[20];
+    cout << "Nhap tên FILE: ";
+    cin.ignore(); 
+    cin.getline(filename, 20);
+    f = fopen(filename, "w+b");
+    if (f == NULL) {
+        cout << "Khong the mo file.\n";
+        return;
+    }
+    for (NodePT* p = PT.Head; p != NULL; p = p->next) {
+        fwrite(&p->info, sizeof(phieuthu), 1, f);
+    }
+    fclose(f);
+    cout << "Da luu vao: " << filename << endl;
+}
+
+void doc(LISTPT &PT) {
+    khoitaoPT(PT);
+    FILE* f;
+    phieuthu x;
+    char filename[20];
+    cout << "Mo file: ";
+    cin.ignore(); 
+    cin.getline(filename, 20);
+    f = fopen(filename, "r+b");
+    if (f == NULL) {
+        cout << "Khong the mo file.\n";
+        return;
+    }
+    while (fread(&x, sizeof(phieuthu), 1, f)) {
+        NodePT* p = GetNode(x);
+        chencuoipt(PT, p);
+    }
+    fclose(f);
+}
+void XoaNodeDau(LISTPT &PT) {
+    if (PT.Head != NULL) {
+        NodePT *p = PT.Head;
+        PT.Head = PT.Head->next;
+        if (PT.Head != NULL) {
+            PT.Head->prev = NULL;
+        }
+        delete p;
+    }
+    if (PT.Head == NULL) {
+        khoitaoPT(PT);
+    }
+}
+
+void XoaNodeCuoi(LISTPT &PT) {
+    if (PT.Head == NULL || PT.Head->next == NULL) {
+        XoaNodeDau(PT);
+        return;
+    }
+    for (NodePT *p = PT.Head; p != NULL; p = p->next) {
+        if (p->next == PT.Tail) {
+            delete PT.Tail;
+            p->next = NULL;
+            PT.Tail = p;
+            break;
+        }
+    }
+}
+
+void XoaNodeCoKhoaBatKy(LISTPT &PT, int xoa) {
+    NodePT *p = timmapt(PT, xoa); // Tim kiem phan tu da xoa
+    if (p == NULL) {
+        cout << "Khong co phan tu";
+        exit(1);
+    } else {
+        if (p == PT.Head && p == PT.Tail) {
+            delete PT.Head;
+            PT.Tail = NULL;
+            PT.Head = NULL;
+        } else if (p == PT.Head) {
+            PT.Head = p->next;
+            PT.Head->prev = NULL;
+        } else if (p == PT.Tail) {
+            PT.Tail = p->prev;
+            PT.Tail->next = NULL;
+        } else {
+            p->prev->next = p->next;
+            p->next->prev = p->prev;
+        }
+        delete p;
+    }
+}
+int main() {
+    LISTPT PT;
+    khoitaoPT(PT);
+
+    int chon;
+
+    while (true) {
+        cout << "1. Nhap danh sach phieu thu\n";
+        cout << "2. Xuat danh sach phieu thu\n";
+        cout << "3. Tim kiem phieu thu\n";
+        cout << "4. Sap xep phieu thu\n";
+        cout << "5. Xoa phieu thu co khoa bat ky\n";
+        cout << "6. Xoa phieu thu dau tien\n";
+        cout << "7. Xoa phieu thu cuoi cung\n";
+        cout << "8. Luu danh sach phieu thu\n";
+        cout << "9. Doc danh sach phieu thu\n";
+        cout << "0. Thoat\n";
+        cout << "Nhap lua chon: ";
+        cin >> chon;
+
+        switch (chon) {
+            case 1:
+                nhapdspt(PT);
+                break;
+            case 2:
+                xuatdspt(PT);
+                break;
+            case 3: {
+                int mapt;
+                cout << "Nhap ma phieu thu can tim: ";
+                cin >> mapt;
+                NodePT* p = timmapt(PT, mapt);
+                if (p != NULL) {
+                    xuatpt(p->info);
+                } else {
+                    cout << "Khong tim thay phieu thu\n";
+                }
+                break;
+            }
+            case 4:
+                cout << "Danh sach phieu thu da sap xep:\n";
+                sapxept(PT);
+                cout << "\n";
+                break;
+            case 5: {
+                int xoa;
+                cout << "Nhap ma phieu thu can xoa: ";
+                cin >> xoa;
+                XoaNodeCoKhoaBatKy(PT, xoa);
+                cout << "Danh sach sau khi xoa:\n";
+                xuatdspt(PT);
+                break;
+            }
+            case 6:
+                XoaNodeDau(PT);
+                cout << "Danh sach sau khi xoa phan tu dau tien:\n";
+                xuatdspt(PT);
+                break;
+            case 7:
+                XoaNodeCuoi(PT);
+                cout << "Danh sach sau khi xoa phan tu cuoi cung:\n";
+                xuatdspt(PT);
+                break;
+            case 8:
+                luu(PT);
+                break;
+            case 9:
+                doc(PT);
+                break;
+            case 0:
+                exit(0);
+            default:
+                cout << "Lua chon khong hop le!\n";
+                break;
+        }
+    }
+    return 0;
+}
